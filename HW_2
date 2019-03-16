@@ -1,0 +1,52 @@
+DROP TABLE `area`;
+
+
+RENAME TABLE `country` TO `countries`;
+
+ALTER TABLE `countries`
+DROP COLUMN `population`,
+DROP COLUMN `space`,
+RENAME COLUMN `name` TO `title`;
+
+ALTER TABLE `countries`
+CHANGE `title` `title` VARCHAR(150) NOT NULL,
+CHANGE `id` `id` INT NOT NULL;
+
+ALTER TABLE `countries`
+ADD UNIQUE INDEX (`title`);
+
+
+RENAME TABLE `region` TO `regions`;
+
+ALTER TABLE `regions`
+DROP COLUMN `population`,
+DROP COLUMN `space`,
+CHANGE `id` `id` INT NOT NULL,
+CHANGE `id_area` `country_id` INT NOT NULL,
+CHANGE `name` `title` VARCHAR(150) NOT NULL,
+ADD UNIQUE INDEX (`title`);
+
+ALTER TABLE `regions`
+ADD FOREIGN KEY (`country_id`) 
+REFERENCES `countries`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT;
+
+
+RENAME TABLE `city` TO `cities`;
+
+ALTER TABLE `cities`
+CHANGE `id` `id` INT NOT NULL,
+CHANGE `name` `title` VARCHAR(150) NOT NULL,
+CHANGE `space` `important` TINYINT(1) NOT NULL,
+CHANGE `population` `country_id` INT NOT NULL,
+CHANGE `id_region` `region_id` INT(1) NOT NULL,
+ADD UNIQUE INDEX (`title`),
+ADD FOREIGN KEY (`country_id`) 
+REFERENCES `countries`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT,
+ADD FOREIGN KEY (`region_id`) 
+REFERENCES `regions`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT;
