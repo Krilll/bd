@@ -1,0 +1,75 @@
+ALTER TABLE `cities` CHANGE `id` `id` INT AUTO_INCREMENT;
+SET foreign_key_checks = 0;
+ALTER TABLE `regions` MODIFY `id` INT AUTO_INCREMENT;
+ALTER TABLE `countries` MODIFY `id` INT AUTO_INCREMENT;
+SET foreign_key_checks = 1;
+
+INSERT INTO `countries` (`title`) 
+VALUES ('Россия'), ('Австралия'), ('Великобритания');
+INSERT INTO `regions` (`country_id`, `title`) 
+VALUES (1, 'Ленинградская область'), (1, 'Московская область'), (3, 
+
+'Англия'), (3, 'Шотландия');
+INSERT INTO `cities` (`country_id`, `region_id`, `title`, `important`) 
+VALUES (1, 1, 'Санкт-Петербург', 1), (1, 1, 'Тосно', 0), (1, 2, 'Москва', 1), (1, 2,  'Можайск', 0);
+
+#Сделать запрос, в котором мы выберем все данные о городе – регион, страна.
+SELECT `cities`.`title` AS `city`, `regions`.`title` AS `region`, `countries`.`title` 
+
+AS `country`, `cities`.`country_id` AS `ci_id`, `countries`.`id` AS `co_id`,
+`cities`.`region_id` AS `ci_reg_id`, `regions`.`id` AS `reg_id`
+FROM `cities` INNER JOIN `regions` INNER JOIN `countries`
+HAVING `ci_id` =  `co_id` AND `ci_reg_id` = `reg_id`;
+
+#Выбрать все города из Московской области.
+SELECT `cities`.`title` AS `city` FROM `cities` WHERE `region_id` = 2;
+
+
+#+ База данных «Сотрудники»
+CREATE TABLE IF NOT EXISTS `workers` (
+`id` INT NOT NULL  AUTO_INCREMENT,
+`name` VARCHAR(25) NOT NULL,
+`lastname` VARCHAR(30) NOT NULL,
+`department` INT NOT NULL,
+`salary` INT NOT NULL,
+`position` VARCHAR(45),
+PRIMARY KEY (`id`));
+
+CREATE TABLE IF NOT EXISTS `departments` (
+`id` INT NOT NULL  AUTO_INCREMENT,
+`name` VARCHAR(25) NOT NULL,
+`count` INT DEFAULT 0,
+`head_id` INT,
+PRIMARY KEY (`id`)
+);
+
+INSERT INTO `departments` (`name`) VALUES ('IT'), ('Бухгалтерия'), ('ИБ');
+
+ALTER TABLE `workers` 
+ADD FOREIGN KEY (`department`)
+REFERENCES `departments`(`id`)
+ON UPDATE CASCADE
+ON DELETE RESTRICT;
+
+INSERT INTO `workers` (`id`, `name`, `lastname`, `department`, `salary`) 
+VALUES (1, 'Юрий', 'Карась', 2, 10000), (2, 'Анастасия', 'Белая', 2, 30000), 
+(3, 'Екатерина', 'Неустроева', 1, 20000), (4, 'Алина', 'Таранина', 1, 30000), 
+(5, 'Анна', 'Бахмет', 3, 15000), (6, 'Анастасия', 'Малащицкая', 3, 16000);
+
+#Выбрать среднюю зарплату по отделам.
+SELECT AVG(`salary`)  AS 'СЗ', `department` AS 'Отдел' 
+FROM `workers` GROUP BY `department`;
+
+#Выбрать максимальную зарплату у сотрудника.
+SELECT  `name`, `lastname`, `salary`  
+FROM `workers` WHERE `salary` = (SELECT MAX(`salary`) FROM `workers`);
+
+#Удалить одного сотрудника, у которого максимальная зарплата.
+DELETE FROM `workers` ORDER BY `salary` DESC LIMIT 1;
+
+#Посчитать количество сотрудников во всех отделах.
+SELECT `department` AS 'отдел', COUNT(*) AS 'кол-во' FROM `workers` GROUP BY `department`;
+
+#Найти количество сотрудников в отделах и посмотреть, сколько всего денег получает отдел.
+SELECT `department` AS 'отдел', COUNT(*) AS 'кол-во', 
+SUM(`salary`)  AS 'сумма'  FROM `workers` GROUP BY `department`;
