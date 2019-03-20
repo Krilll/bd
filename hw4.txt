@@ -1,0 +1,61 @@
+#Создать VIEW на основе запросов, которые вы сделали в ДЗ к уроку 3.
+
+CREATE VIEW `city_info` AS
+SELECT `cities`.`title` AS `city`, `regions`.`title` AS `region`, 
+`countries`.`title` AS `country`, `cities`.`country_id` AS `ci_id`, `countries`.`id` AS `co_id`,
+`cities`.`region_id` AS `ci_reg_id`, `regions`.`id` AS `reg_id` FROM `cities` 
+INNER JOIN `regions` 
+INNER JOIN `countries`
+HAVING `ci_id` =  `co_id` AND `ci_reg_id` = `reg_id`;
+
+
+#Создать функцию и процедуру, которая найдет менеджера по имени и фамилии.
+
+DELIMITER //
+CREATE PROCEDURE `find_man` (name VARCHAR(25), lastname VARCHAR(30))
+BEGIN
+SELECT `workers`.`name`, `workers`.`lastname`, 
+`workers`.`salary`,`workers`.`position`, `departments`.`name` AS department
+FROM `workers` JOIN `departments` 
+ON `workers`.`department` = `departments`.`id`
+WHERE `workers`.`name` = name AND `workers`.`lastname` = lastname;
+END//
+DELIMITER ;
+
+CALL `find_man` ('Юрий', 'Карась');
+
+
+CREATE FUNCTION `find_man` (name VARCHAR(25), lastname VARCHAR(30))
+RETURNS VARCHAR(25) DETERMINISTIC
+READS SQL DATA
+RETURN (SELECT `workers`.`id` FROM `workers` 
+WHERE `workers`.`name` = name AND `workers`.`lastname` = lastname);
+
+SELECT `find_man` ('Юрий', 'Карась');
+
+
+#Создать триггер, который при добавлении нового сотрудника будет выплачивать ему вступительный бонус, занося запись об этом в таблицу salary.
+
+CREATE TABLE IF NOT EXISTS `salary` (
+`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`worker_id` INT NOT NULL,
+`salary` INT NOT NULL,
+`bonus` INT NULL
+);
+
+CREATE TRIGGER `bonus`
+AFTER INSERT ON `workers`
+FOR EACH ROW
+INSERT INTO `salary` (`worker_id`, `salary`, `bonus`) VALUES (NEW.id, NEW.salary, 1000);
+
+ALTER TABLE `salary` 
+ADD FOREIGN KEY (`worker_id`)
+REFERENCES `workers`(`id`)
+ON UPDATE CASCADE
+ON DELETE RESTRICT;
+
+INSERT INTO `workers` (`id`, `name`, `lastname`, `department`, `salary`) VALUES (2, 'Анастасия', 'Белая', 2, 30000);
+INSERT INTO `workers` (`name`, `lastname`, `department`, `salary`) VALUES ('Андрей', 'Краснов', 3, 25000);
+INSERT INTO `workers` (`name`, `lastname`, `department`, `salary`) VALUES ('Павел', 'Якимов', 1, 27000);
+
+
