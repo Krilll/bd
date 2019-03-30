@@ -1,0 +1,276 @@
+1.1 Настроить master-сервер
+
+#в MySQL Workbench создаем базу данных
+
+CREATE database `users`;
+USE `users`;
+CREATE TABLE IF NOT EXISTS `workers` (
+`id` INT NOT NULL  AUTO_INCREMENT,
+`name` VARCHAR(25) NOT NULL,
+`lastname` VARCHAR(30) NOT NULL,
+`department` INT NOT NULL,
+`salary` INT NOT NULL,
+`position` VARCHAR(45),
+PRIMARY KEY (`id`));
+
+INSERT INTO `workers` (`id`, `name`, `lastname`, `department`, `salary`) 
+VALUES (1, 'Юрий', 'Карась', 2, 10000), (2, 'Анастасия', 'Белая', 2, 30000), 
+(3, 'Екатерина', 'Неустроева', 1, 20000), (4, 'Алина', 'Таранина', 1, 30000), 
+(5, 'Анна', 'Бахмет', 3, 15000), (6, 'Анастасия', 'Малащицкая', 3, 16000);
+
+#ищем файл mysql.cnf
+
+проходим на вирутальной машине путь: etc/mysql/mysql.chf 
+
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mysql.conf.d/
+
+#создаем отдельный конфигурационный файл
+
+проходим на вирутальной машине путь: etc/mysql/conf.d/
+удаляем файл master0412.cnf
+создаем файл master3003.cnf
+
+в файле master3003.cnf пишем
+
+[mysqld]
+server-id = 1
+
+log_bin = /var/log/mysql/bin3003.log
+
+binlog_do_db = users
+
+#перезапускаем сервер
+
+root@MySQL8:~# mysql -u root -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.13 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> quit
+Bye
+root@MySQL8:~# service mysql restart
+
+#подключаемся 
+
+root@MySQL8:~# mysql -u root -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.13 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+#выводим статус мастера
+
+mysql> SHOW MASTER STATUS;
++----------------+----------+--------------+------------------+-------------------+
+| File           | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++----------------+----------+--------------+------------------+-------------------+
+| bin3003.000002 |      155 | users        |                  |                   |
++----------------+----------+--------------+------------------+-------------------+
+1 row in set (0,00 sec)
+
+#выгружаем базу данных
+
+mysql> quit
+Bye
+root@MySQL8:~# mysqldump -u root -p123123 users > /var/dump3003.sql
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+root@MySQL8:~# 
+
+
+1.2 Настроить slave-сервер
+
+#ищем файл mysql.cnf
+
+проходим на вирутальной машине путь: etc/mysql/mysql.chf 
+
+!includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mysql.conf.d/
+
+#создаем отдельный конфигурационный файл
+
+проходим на вирутальной машине путь: etc/mysql/conf.d/
+удаляем файл master3003.cnf
+создаем файл slave3003.cnf
+
+в файле slave3003.cnf пишем
+
+[mysqld]
+server-id = 2
+
+log_bin = bin3003.log
+
+binlog_do_db = users
+
+relay-log = var/log/mysql/relay3003.log
+
+
+#подключаемся 
+
+root@MySQL8:~# mysql -u root -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 8
+Server version: 8.0.13 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+#смотрим доступные бд
+
+
+mysql> SHOW SCHEMAS;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| phpmyadmin         |
+| sys                |
+| users              |
++--------------------+
+6 rows in set (0,01 sec)
+
+#подключаем slave к master
+
+mysql> STOP SLAVE;
+Query OK, 0 rows affected, 1 warning (0,00 sec)
+
+mysql> RESET SLAVE;
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> CHANGE MASTER TO MASTER_HOST='127.0.0.1',
+    -> MASTER_USER='root', MASTER_PASSWORD='123123',
+    -> MASTER_LOG_FILE='bin3003.000002', MASTER_LOG_POS=155;
+Query OK, 0 rows affected, 2 warnings (0,65 sec)
+
+mysql> START SLAVE;
+Query OK, 0 rows affected (0,06 sec)
+
+mysql> SHOW SLAVE STATUS\G;
+*************************** 1. row ***************************
+               Slave_IO_State: 
+                  Master_Host: 127.0.0.1
+                  Master_User: root
+                  Master_Port: 3306
+                Connect_Retry: 60
+              Master_Log_File: bin3003.000002
+          Read_Master_Log_Pos: 155
+               Relay_Log_File: MySQL8-relay-bin.000001
+                Relay_Log_Pos: 4
+        Relay_Master_Log_File: bin3003.000002
+             Slave_IO_Running: No
+            Slave_SQL_Running: Yes
+              Replicate_Do_DB: 
+          Replicate_Ignore_DB: 
+           Replicate_Do_Table: 
+       Replicate_Ignore_Table: 
+      Replicate_Wild_Do_Table: 
+  Replicate_Wild_Ignore_Table: 
+                   Last_Errno: 0
+                   Last_Error: 
+                 Skip_Counter: 0
+          Exec_Master_Log_Pos: 155
+              Relay_Log_Space: 155
+              Until_Condition: None
+               Until_Log_File: 
+                Until_Log_Pos: 0
+           Master_SSL_Allowed: No
+           Master_SSL_CA_File: 
+           Master_SSL_CA_Path: 
+              Master_SSL_Cert: 
+            Master_SSL_Cipher: 
+               Master_SSL_Key: 
+        Seconds_Behind_Master: NULL
+Master_SSL_Verify_Server_Cert: No
+                Last_IO_Errno: 13117
+                Last_IO_Error: Fatal error: The slave I/O thread stops because master and slave have equal MySQL server ids; these ids must be different for replication to work (or the --replicate-same-server-id option must be used on slave but this does not always make sense; please check the manual before using it).
+               Last_SQL_Errno: 0
+               Last_SQL_Error: 
+  Replicate_Ignore_Server_Ids: 
+             Master_Server_Id: 1
+                  Master_UUID: 
+             Master_Info_File: mysql.slave_master_info
+                    SQL_Delay: 0
+          SQL_Remaining_Delay: NULL
+      Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates
+           Master_Retry_Count: 86400
+                  Master_Bind: 
+      Last_IO_Error_Timestamp: 190330 22:22:51
+     Last_SQL_Error_Timestamp: 
+               Master_SSL_Crl: 
+           Master_SSL_Crlpath: 
+           Retrieved_Gtid_Set: 
+            Executed_Gtid_Set: 
+                Auto_Position: 0
+         Replicate_Rewrite_DB: 
+                 Channel_Name: 
+           Master_TLS_Version: 
+       Master_public_key_path: 
+        Get_master_public_key: 0
+1 row in set (0,00 sec)
+
+ERROR: 
+No query specified
+
+mysql> SHOW VARIABLES LIKE 'server_id';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| server_id     | 1     |
++---------------+-------+
+1 row in set (0,09 sec)
+
+mysql> SET GLOBAL server_id=2;
+Query OK, 0 rows affected (0,00 sec)
+
+mysql> SHOW VARIABLES LIKE 'server_id';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| server_id     | 2     |
++---------------+-------+
+1 row in set (0,00 sec)
+
+
+#работаем с базой данных
+#на slave
+mysql> SELECT * FROM `users`.`workers`;
++----+--------------------+----------------------+------------+--------+----------+
+| id | name               | lastname             | department | salary | position |
++----+--------------------+----------------------+------------+--------+----------+
+|  1 | Юрий               | Карась               |          2 |  10000 | NULL     |
+|  2 | Анастасия          | Белая                |          2 |  30000 | NULL     |
+|  3 | Екатерина          | Неустроева           |          1 |  20000 | NULL     |
+|  4 | Алина              | Таранина             |          1 |  30000 | NULL     |
+|  5 | Анна               | Бахмет               |          3 |  15000 | NULL     |
+|  6 | Анастасия          | Малащицкая           |          3 |  16000 | NULL     |
++----+--------------------+----------------------+------------+--------+----------+
+6 rows in set (0,01 sec)
+
+#на master
+INSERT INTO `users.``workers` (`name`, `lastname`, `department`, `salary`) 
+VALUES ('Анеш', 'Дверь', 3, 1000);
