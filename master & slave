@@ -276,3 +276,5 @@ mysql> INSERT INTO `users`.`workers` (`name`, `lastname`, `department`, `salary`
     -> VALUES ('Анеш', 'Дверь', 3, 1000);
 Query OK, 1 row affected (1,41 sec)
 
+#на slave
+mysql> SELECT * FROM `users`.`workers`;
