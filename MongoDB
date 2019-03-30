@@ -1,3 +1,46 @@
 2. повторить базу данных городов в монго
 
 #пытаемся установить подключение
+root@MySQL8:~# mongo
+MongoDB shell version v4.0.4
+connecting to: mongodb://127.0.0.1:27017
+2019-03-30T15:36:54.409+0300 E QUERY    [js] Error: couldn't connect to server 127.0.0.1:27017, connection attempt failed: SocketException: Error connecting to 127.0.0.1:27017 :: caused by :: Connection refused :
+connect@src/mongo/shell/mongo.js:257:13
+@(connect):1:6
+exception: connect failed
+
+root@MySQL8:~# service mongod restart
+root@MySQL8:~# service mongod restart
+root@MySQL8:~# mongo
+MongoDB shell version v4.0.4
+connecting to: mongodb://127.0.0.1:27017
+2019-03-30T15:54:23.078+0300 E QUERY    [js] Error: couldn't connect to server 127.0.0.1:27017, connection attempt failed: SocketException: Error connecting to 127.0.0.1:27017 :: caused by :: Connection refused :
+connect@src/mongo/shell/mongo.js:257:13
+@(connect):1:6
+exception: connect failed
+root@MySQL8:~# mongo
+MongoDB shell version v4.0.4
+connecting to: mongodb://127.0.0.1:27017
+Implicit session: session { "id" : UUID("80bf7529-5867-48b5-8550-6fe5ea96223b") }
+MongoDB server version: 4.0.4
+Server has startup warnings: 
+2019-03-30T15:54:19.467+0300 I STORAGE  [initandlisten] 
+2019-03-30T15:54:19.467+0300 I STORAGE  [initandlisten] ** WARNING: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine
+2019-03-30T15:54:19.467+0300 I STORAGE  [initandlisten] **          See http://dochub.mongodb.org/core/prodnotes-filesystem
+2019-03-30T15:54:23.941+0300 I CONTROL  [initandlisten] 
+2019-03-30T15:54:23.942+0300 I CONTROL  [initandlisten] ** WARNING: Access control is not enabled for the database.
+2019-03-30T15:54:23.942+0300 I CONTROL  [initandlisten] **          Read and write access to data and configuration is unrestricted.
+2019-03-30T15:54:23.942+0300 I CONTROL  [initandlisten] 
+---
+Enable MongoDB's free cloud-based monitoring service, which will then receive and display
+metrics about your deployment (disk utilization, CPU, operation statistics, etc).
+
+The monitoring data will be available on a MongoDB website with a unique URL accessible to you
+and anyone you share the URL with. MongoDB may use this information to make product
+improvements and to suggest MongoDB products and deployment options to you.
+
+To enable free monitoring, run the following command: db.enableFreeMonitoring()
+To permanently disable this reminder, run the following command: db.disableFreeMonitoring()
+---
+
+> 
