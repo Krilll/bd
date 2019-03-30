@@ -1,6 +1,7 @@
 2. повторить базу данных городов в монго
 
 #пытаемся установить подключение
+
 root@MySQL8:~# mongo
 MongoDB shell version v4.0.4
 connecting to: mongodb://127.0.0.1:27017
@@ -43,4 +44,135 @@ To enable free monitoring, run the following command: db.enableFreeMonitoring()
 To permanently disable this reminder, run the following command: db.disableFreeMonitoring()
 ---
 
-> 
+#создаем базу данных db
+
+> use db
+switched to db db
+
+#добавляем страны
+
+> db.db.insert({"name_country":"Австралия"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Великобритания"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Россия"});
+WriteResult({ "nInserted" : 1 })
+
+> db.db.find().pretty();
+{
+	"_id" : ObjectId("5c9f6be91e93b189fafd4400"),
+	"name_country" : "Австралия"
+}
+{
+	"_id" : ObjectId("5c9f6bff1e93b189fafd4401"),
+	"name_country" : "Великобритания"
+}
+{ "_id" : ObjectId("5c9f6c0b1e93b189fafd4402"), "name_country" : "Россия" }
+
+#добавляем области
+
+> db.db.insert({"name_country":"Россия", "name_region":"Ленинградская область"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Россия", "name_region":"Московская область"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Великобритания", "name_region":"Англия"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Великобритания", "name_region":"Шотландия"});
+WriteResult({ "nInserted" : 1 })
+
+> db.db.find().pretty();
+{
+	"_id" : ObjectId("5c9f6be91e93b189fafd4400"),
+	"name_country" : "Австралия"
+}
+{
+	"_id" : ObjectId("5c9f6bff1e93b189fafd4401"),
+	"name_country" : "Великобритания"
+}
+{ "_id" : ObjectId("5c9f6c0b1e93b189fafd4402"), "name_country" : "Россия" }
+{
+	"_id" : ObjectId("5c9f6d021e93b189fafd4403"),
+	"name_country" : "Россия",
+	"name_region" : "Ленинградская область"
+}
+{
+	"_id" : ObjectId("5c9f6d241e93b189fafd4404"),
+	"name_country" : "Россия",
+	"name_region" : "Московская область"
+}
+{
+	"_id" : ObjectId("5c9f6d491e93b189fafd4405"),
+	"name_country" : "Великобритания",
+	"name_region" : "Англия"
+}
+{
+	"_id" : ObjectId("5c9f6d651e93b189fafd4406"),
+	"name_country" : "Великобритания",
+	"name_region" : "Шотландия"
+}
+
+#добавляем города
+
+> db.db.insert({"name_country":"Россия", "name_region":"Ленинградская область", "name_city":"Санкт-Петербург"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Россия", "name_region":"Ленинградская область", "name_city":"Тосно"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Россия", "name_region":"Московская область", "name_city":"Москва"});
+WriteResult({ "nInserted" : 1 })
+> db.db.insert({"name_country":"Россия", "name_region":"Московская область", "name_city":"Можайск"});
+WriteResult({ "nInserted" : 1 })
+
+> db.db.find().pretty();
+{
+	"_id" : ObjectId("5c9f6be91e93b189fafd4400"),
+	"name_country" : "Австралия"
+}
+{
+	"_id" : ObjectId("5c9f6bff1e93b189fafd4401"),
+	"name_country" : "Великобритания"
+}
+{ "_id" : ObjectId("5c9f6c0b1e93b189fafd4402"), "name_country" : "Россия" }
+{
+	"_id" : ObjectId("5c9f6d021e93b189fafd4403"),
+	"name_country" : "Россия",
+	"name_region" : "Ленинградская область"
+}
+{
+	"_id" : ObjectId("5c9f6d241e93b189fafd4404"),
+	"name_country" : "Россия",
+	"name_region" : "Московская область"
+}
+{
+	"_id" : ObjectId("5c9f6d491e93b189fafd4405"),
+	"name_country" : "Великобритания",
+	"name_region" : "Англия"
+}
+{
+	"_id" : ObjectId("5c9f6d651e93b189fafd4406"),
+	"name_country" : "Великобритания",
+	"name_region" : "Шотландия"
+}
+{
+	"_id" : ObjectId("5c9f6e15ba595547264de8fc"),
+	"name_country" : "Россия",
+	"name_region" : "Ленинградская область",
+	"name_city" : "Санкт-Петербург"
+}
+{
+	"_id" : ObjectId("5c9f6e23ba595547264de8fd"),
+	"name_country" : "Россия",
+	"name_region" : "Ленинградская область",
+	"name_city" : "Тосно"
+}
+{
+	"_id" : ObjectId("5c9f6e38ba595547264de8fe"),
+	"name_country" : "Россия",
+	"name_region" : "Московская область",
+	"name_city" : "Москва"
+}
+{
+	"_id" : ObjectId("5c9f6e49ba595547264de8ff"),
+	"name_country" : "Россия",
+	"name_region" : "Московская область",
+	"name_city" : "Можайск"
+}
