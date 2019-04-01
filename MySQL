@@ -54,20 +54,19 @@ FROM `users` INNER JOIN `users_likes`
 GROUP BY `users`.`id`; 
 
 
-SELECT `users`.`id`, `users`.`login` AS 'имя', 
-
-COUNT(`users_likes`.`whom`) AS 'лайков получено' 
-FROM `users` INNER JOIN `users_likes` 
+(SELECT `users`.`id`, `users`.`login` AS 'имя' 
+FROM `users` INNER JOIN `users_likes`)
+UNION
 
 (SELECT COUNT(`users_likes`.`who`) AS 'лайков поставлено'
 FROM `users` INNER JOIN `users_likes` 
 WHERE `users_likes`.`who` = `users`.`id` 
 GROUP BY `users`.`id`)
 UNION
-(SELECT COUNT(`users_likes`.`whom`) AS 'лайков получен'
+(SELECT COUNT(`users_likes`.`whom`) AS 'лайков получено'
 FROM `users` INNER JOIN `users_likes` 
 WHERE `users_likes`.`whom` = `users`.`id` 
-GROUP BY `users`.`id`; 
+GROUP BY `users`.`id`); 
 
 SELECT manager_vydacha, COUNT(*)
 FROM raw
