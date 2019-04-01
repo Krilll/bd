@@ -110,15 +110,123 @@ WHERE `users_likes`.`who` != `users`.`id`
 GROUP BY `users`.`id`
 ORDER BY `users`.`id` ASC;
 
-
-SELECT `users`.`id`, COUNT(`users`.`id`) 
- 
+++++++++
+SELECT `users`.`id`, COUNT(`users_likes`.`who`)
+AS 'лайков поставлено'
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`who` = `users`.`id`
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC;
+++++++++++
+SELECT (SELECT COUNT(*) FROM `STR` WHERE STR.category_id = cat.id) as `count`, 
+cat.name FROM cat/»
++++++++++=
+SELECT `users`.`id`, 
+((SELECT COUNT(`users_likes`.`who`)
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`who` = `users`.`id`)
+- COUNT(`users_likes`.`who`))
 AS 'лайков поставлено'
 FROM `users` INNER JOIN `users_likes` 
 WHERE `users_likes`.`who` != `users`.`id`
- 
 GROUP BY `users`.`id`
 ORDER BY `users`.`id` ASC;
++++++++++
++++++
+
+
+++++ the enf
+SELECT `users`.`id`, 
+(SELECT COUNT(`users`.`id`) FROM `users` 
+WHERE `users`.`id` IS NOT NULL)
+- COUNT(`users_likes`.`who`)
+AS 'лайков поставлено'
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`who` != `users`.`id`
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC;
++++ the enf
+
+
+SELECT `users`.`id`, `users`.`login` AS 'имя', 
+((SELECT COUNT(`users`.`id`) FROM `users` 
+    WHERE `users`.`id` IS NOT NULL
+    )
+  - COUNT(`users_likes`.`who`)
+  AS 'лайков поставлено'
+  FROM `users` INNER JOIN `users_likes` 
+  WHERE `users_likes`.`who` != `users`.`id`
+  GROUP BY `users`.`id`)
+  FROM `users`
+  ORDER BY `users`.`id` ASC
+  ,
+(SELECT COUNT(`users`.`id`) FROM `users` 
+  WHERE `users`.`id` IS NOT NULL
+  )
+- COUNT(`users_likes`.`whom`)
+AS 'лайков получено'
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`whom` != `users`.`id`
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC
+;
+
+
+
+SELECT `users`.`id`, 
+COUNT(`users_likes`.`who`)
+AS 'лайков поставлено'
+FROM `users` LEFT JOIN `users_likes` 
+WHERE `users_likes`.`who` != `users`.`id`
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC;
+
+
+(SELECT `users`.`id`)
+UNION
+((SELECT COUNT(`users`.`id`) FROM `users` 
+WHERE `users`.`id` IS NOT NULL)
+- COUNT(`users_likes`.`who`)
+AS 'лайков поставлено'
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`who` != `users`.`id`
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC);
+AND
+SELECT `users`.`id`, 
+(SELECT COUNT(`users`.`id`) FROM `users` 
+WHERE `users`.`id` IS NOT NULL)
+- COUNT(`users_likes`.`whom`)
+AS 'лайков получено'
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`whom` != `users`.`id`
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC;
+
+
+
+
+
+SELECT `users`.`id`, 
+(
+  (SELECT COUNT(`users`.`id`) FROM `users` 
+  WHERE `users`.`id` IS NOT NULL)
+  - COUNT(`users_likes`.`who`)
+  AS 'лайков поставлено'
+  FROM `users` INNER JOIN `users_likes` 
+  WHERE `users_likes`.`who` != `users`.`id`
+  GROUP BY `users`.`id`),
+(SELECT COUNT(`users`.`id`) FROM `users` 
+WHERE `users`.`id` IS NOT NULL)
+- COUNT(`users_likes`.`whom`)
+AS 'лайков получено'
+FROM `users` INNER JOIN `users_likes` 
+WHERE `users_likes`.`whom` != `users`.`id`,
+
+GROUP BY `users`.`id`
+ORDER BY `users`.`id` ASC
+;
+
 
 
 #Взаимные лайки.
