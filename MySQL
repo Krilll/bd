@@ -72,8 +72,7 @@ SUM(
     AND 
     `users_likes`.`like_2_to_1` = 1) 
 ) AS 'лайков получено' 
-FROM `users` 
-INNER JOIN `users_likes` 
+FROM `users` INNER JOIN `users_likes` 
 GROUP BY `users`.`id`; 
 
 +----+-----------+-------------------+-----------------+
@@ -111,8 +110,7 @@ SUM(
   AND 
   `like_2_to_1` = 1)
 ) AS 'лайков получено'
-FROM `users` 
-INNER JOIN `users_likes` 
+FROM `users` INNER JOIN `users_likes` 
 GROUP BY `users`.`id`;
 
 +----+-----------+-------------------+-----------------+
@@ -175,6 +173,76 @@ OR `users`.`id` = `id_user2`);
 которые поставили лайк пользователям A и B (id задайте произвольно), 
 но при этом не поставили лайк пользователю C.
 
+#id пользователя A = 2, id пользователя B = 5, id пользователя C = 4, 
+
+INSERT INTO `users_likes` (`id_user1`, `id_user2`) 
+VALUES (4,5), (4,2), (3,5);
+
+
+#1,- 7,
+4
+
+mysql> SELECT `users`.`id`, `users`.`login` AS 'имя'
+FROM `users` INNER JOIN `users_likes` 
+WHERE( 
+  (`users`.`id` = `id_user1`
+    AND `users_likes`.`id_user2` IN (2, 5)
+    AND `users_likes`.`like_1_to_2` = 1)
+  OR
+  (`users`.`id` = `id_user2`
+    AND `users_likes`.`id_user1` IN (2, 5) 
+    AND `users_likes`.`like_2_to_1` = 1)
+)    
+;
+
+AND (SUM(`users`.`id` = `id_user2`) = 2
+OR SUM(`users`.`id` = `id_user2`) = 2
+OR SUM(`users`.`id` = `id_user2`) + SUM(`users`.`id` = `id_user2`) = 2);
+
+
+
+
+
+AND
+((`users`.`id` = `id_user1`
+AND `users_likes`.`id_user2` = 5 
+AND `users_likes`.`like_1_to_2` = 1)
+OR
+(`users`.`id` = `id_user2`
+AND `users_likes`.`id_user1` = 5 
+AND `users_likes`.`like_2_to_1` = 1))
+
+AND
+((`users_likes`.`id_user2` = 5 AND `users_likes`.`like_2_to_1` = 1)
+OR (`users_likes`.`id_user1` = 5 AND `users_likes`.`like_1_to_2` = 1))
+AND
+((`users_likes`.`id_user2` = 4 AND `users_likes`.`like_2_to_1` = 0)
+OR (`users_likes`.`id_user1` = 4 AND `users_likes`.`like_1_to_2` = 0)); 
+
+
+#1,- 7,
+4 => 
+===
+SELECT `users`.`id`, `users`.`login` AS 'имя', 
+CASE 
+WHEN (`users_likes`.`id_user2` = 2 AND
+`users`.`id` = `id_user1`
+AND `users_likes`.`like_1_to_2` = 1)
+THEN 'yes' 
+END AS 'answer' 
+FROM `users` INNER JOIN `users_likes`
+WHERE SUBSTRING('answer',0,3) = 'yes';
+
+
+WHERE( 
+  (`users`.`id` = `id_user1`
+    AND `users_likes`.`id_user2` IN (2, 5)
+    AND `users_likes`.`like_1_to_2` = 1)
+  OR
+  (`users`.`id` = `id_user2`
+    AND `users_likes`.`id_user1` IN (2, 5) 
+    AND `users_likes`.`like_2_to_1` = 1)
+==
 
 
 Задача 3. 
