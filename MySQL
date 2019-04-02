@@ -44,8 +44,53 @@ VALUES (1,2), (2,3), (4,8), (7,10), (10,7),
 
 #id пользователя; имя; лайков получено; лайков поставлено.
 
-USE `users_likes`;
+mysql> USE Social_network;
 
+Database changed
+
+mysql> SELECT `users`.`id`, `users`.`login` AS 'имя', 
+(SUM(`users_likes`.`who` = `users`.`id`)) AS 'лайков получено',
+(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков поставлено'
+FROM `users` INNER JOIN `users_likes`
+GROUP BY  `users`.`id`;
+
+Current database: Social_network
+
++----+-----------+-----------------+-------------------+
+| id | имя       | лайков получено | лайков поставлено |
++----+-----------+-----------------+-------------------+
+|  1 | Анеш      |               3 |                 0 |
+|  2 | Алина     |               1 |                 2 |
+|  3 | Игорь     |               1 |                 1 |
+|  4 | Юрий      |               1 |                 1 |
+|  5 | Валерий   |               0 |                 1 |
+|  6 | Евгений   |               0 |                 0 |
+|  7 | Марк      |               1 |                 1 |
+|  8 | Анастасия |               0 |                 2 |
+|  9 | Андрей    |               1 |                 0 |
+| 10 | Наталья   |               2 |                 2 |
++----+-----------+-----------------+-------------------+
+10 rows in set (1.08 sec)
+
+#Взаимные лайки.
+
+SELECT `users`.`id`, `users`.`login` AS 'имя', 
+(SUM(`users_likes`.`who` = `users_likes`.`whom`)) AS 'взаимных лайков'
+FROM `users` INNER JOIN `users_likes`
+GROUP BY  `users`.`id`;
+
+SELECT `users_likes`.`who`, 
+`users_likes`.`whom`,
+
+
+(SUM(`users_likes`.`who` = `users_likes`.`whom`)) AS 'взаимных лайков'
+FROM `users_likes`
+WHERE (`users_likes`.`who` = `users_likes`.`whom`)
+;
+
+
+
+==
 SELECT `users`.`id`, `users`.`login` AS 'имя', 
 (SUM(`users_likes`.`who` = `users`.`id`)) AS 'лайков получено',
 (SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков поставлено'
@@ -54,11 +99,16 @@ GROUP BY  `users`.`id`;
 
 
 
+SELECT (COUNT(`users_likes`.`who` = `users_likes`.`whom`)) 
+AS 'взаимных лайков' 
+FROM `users_likes` 
+WHERE (`users_likes`.`who` = `users_likes`.`whom`);
 
-
-#Взаимные лайки.
-  
-  
+SELECT `users`.`id`, `users`.`login` AS 'имя', 
+(SUM(`users`.`who` = `users`.`whom`)) AS 'лайков получено',
+(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков поставлено'
+FROM `users` INNER JOIN `users_likes`
+GROUP BY  `users`.`id`;
   
 Задача 2. 
 Для структуры из задачи 1 выведите список всех пользователей, 
