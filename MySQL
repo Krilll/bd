@@ -22,23 +22,28 @@ VALUES ('Анеш'), ('Алина'), ('Игорь'), ('Юрий'), ('Валер�
 
 CREATE TABLE IF NOT EXISTS `users_likes` (
 `id` INT NOT NULL AUTO_INCREMENT,
-`who` INT NOT NULL,
-`whom` INT NOT NULL,
+`id_user1` INT NOT NULL,
+`id_user2` INT NOT NULL,
+`like_1_to_2` INT(1) NOT NULL DEFAULT '1', 
+`like_2_to_1` INT(1) NOT NULL DEFAULT '0',
 PRIMARY KEY (`id`));
 
 ALTER TABLE `users_likes`
-ADD FOREIGN KEY (`who`) 
+ADD FOREIGN KEY (`id_user1`) 
 REFERENCES `users`(`id`) 
 ON UPDATE CASCADE
 ON DELETE RESTRICT,
-ADD FOREIGN KEY (`whom`) 
+ADD FOREIGN KEY (`id_user2`) 
 REFERENCES `users`(`id`) 
 ON UPDATE CASCADE
 ON DELETE RESTRICT;
 
-INSERT INTO `users_likes` (`who`, `whom`) 
-VALUES (1,2), (2,3), (4,8), (7,10), (10,7),
+INSERT INTO `users_likes` (`id_user1`, `id_user2`) 
+VALUES (1,2), (2,3), (4,8), (7,10), 
 (9,10), (10,8), (1,5), (3,2), (1,4);
+
+INSERT INTO `users_likes` (`id_user1`, `id_user2`, `like_2_to_1`) 
+VALUES (3,4,1), (8,6,1), (7,2,1);
 
 #запросы
 
@@ -49,71 +54,128 @@ mysql> USE Social_network;
 Database changed
 
 mysql> SELECT `users`.`id`, `users`.`login` AS 'имя', 
-(SUM(`users_likes`.`who` = `users`.`id`)) AS 'лайков поставлено',
-(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков получено'
-FROM `users` INNER JOIN `users_likes`
-GROUP BY  `users`.`id`;
+SUM( 
+  (`users_likes`.`id_user1` = `users`.`id` 
+    AND 
+    `users_likes`.`like_1_to_2` = 1) 
+  OR 
+  (`users_likes`.`id_user2` = `users`.`id` 
+    AND 
+    `users_likes`.`like_2_to_1` = 1) 
+) AS 'лайков поставлено',
+SUM( 
+  (`users_likes`.`id_user2` = `users`.`id` 
+    AND 
+    `users_likes`.`like_1_to_2` = 1) 
+  OR 
+  (`users_likes`.`id_user1` = `users`.`id` 
+    AND 
+    `users_likes`.`like_2_to_1` = 1) 
+) AS 'лайков получено' 
+FROM `users` 
+INNER JOIN `users_likes` 
+GROUP BY `users`.`id`; 
 
-Current database: Social_network
++----+-----------+-------------------+-----------------+
+| id | имя       | лайков поставлено | лайков получено |
++----+-----------+-------------------+-----------------+
+|  1 | Анеш      |                 3 |               0 |
+|  2 | Алина     |                 2 |               2 |
+|  3 | Игорь     |                 1 |               2 |
+|  4 | Юрий      |                 2 |               2 |
+|  5 | Валерий   |                 0 |               1 |
+|  6 | Евгений   |                 1 |               1 |
+|  7 | Марк      |                 2 |               1 |
+|  8 | Анастасия |                 1 |               3 |
+|  9 | Андрей    |                 1 |               0 |
+| 10 | Наталья   |                 1 |               2 |
++----+-----------+-------------------+-----------------+
+10 rows in set (0.00 sec)
 
-+----+-----------+-----------------+-------------------+
-| id | имя       | лайков поставено| лайков получено   |
-+----+-----------+-----------------+-------------------+
-|  1 | Анеш      |               3 |                 0 |
-|  2 | Алина     |               1 |                 2 |
-|  3 | Игорь     |               1 |                 1 |
-|  4 | Юрий      |               1 |                 1 |
-|  5 | Валерий   |               0 |                 1 |
-|  6 | Евгений   |               0 |                 0 |
-|  7 | Марк      |               1 |                 1 |
-|  8 | Анастасия |               0 |                 2 |
-|  9 | Андрей    |               1 |                 0 |
-| 10 | Наталья   |               2 |                 2 |
-+----+-----------+-----------------+-------------------+
-10 rows in set (1.08 sec)
+#Если по умолчанию первым записывать пользователя,
+поставившего лайк, а, если ему поставят ответный лайк,
+уже существующую запись в бд обновлять, можно сократить предыдущий SELECT
+
+mysql> SELECT `users`.`id`, `users`.`login` AS 'имя', 
+SUM( 
+  (`users_likes`.`id_user1` = `users`.`id`) 
+  OR
+  (`users_likes`.`id_user2` = `users`.`id`
+  AND 
+  `like_2_to_1` = 1)
+) AS 'лайков поставлено',
+SUM( 
+  (`users_likes`.`id_user2` = `users`.`id`) 
+  OR
+  (`users_likes`.`id_user1` = `users`.`id`
+  AND 
+  `like_2_to_1` = 1)
+) AS 'лайков получено'
+FROM `users` 
+INNER JOIN `users_likes` 
+GROUP BY `users`.`id`;
+
++----+-----------+-------------------+-----------------+
+| id | имя       | лайков поставлено | лайков получено |
++----+-----------+-------------------+-----------------+
+|  1 | Анеш      |                 3 |               0 |
+|  2 | Алина     |                 2 |               2 |
+|  3 | Игорь     |                 1 |               2 |
+|  4 | Юрий      |                 2 |               2 |
+|  5 | Валерий   |                 0 |               1 |
+|  6 | Евгений   |                 1 |               1 |
+|  7 | Марк      |                 2 |               1 |
+|  8 | Анастасия |                 1 |               3 |
+|  9 | Андрей    |                 1 |               0 |
+| 10 | Наталья   |                 1 |               2 |
++----+-----------+-------------------+-----------------+
+10 rows in set (0.00 sec)
+
 
 #Взаимные лайки.
 
-SELECT `users`.`id`, `users`.`login` AS 'имя', 
-(SUM(`users_likes`.`who` = `users_likes`.`whom`)) AS 'взаимных лайков'
-FROM `users` INNER JOIN `users_likes`
-GROUP BY  `users`.`id`;
-
-SELECT `users_likes`.`who`, 
-`users_likes`.`whom`,
-
-
-(SUM(`users_likes`.`who` = `users_likes`.`whom`)) AS 'взаимных лайков'
+mysql> SELECT `users_likes`.`id`, `id_user1`, `id_user2`
 FROM `users_likes`
-WHERE (`users_likes`.`who` = `users_likes`.`whom`)
-;
+WHERE `like_2_to_1` = 1
+AND `like_1_to_2` = 1;
 
++----+----------+----------+
+| id | id_user1 | id_user2 |
++----+----------+----------+
+| 11 |        3 |        4 |
+| 12 |        8 |        6 |
+| 13 |        7 |        5 |
++----+----------+----------+
+3 rows in set (0.00 sec)
 
-
-==
-SELECT `users`.`id`, `users`.`login` AS 'имя', 
-(SUM(`users_likes`.`who` = `users`.`id`)) AS 'лайков получено',
-(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков поставлено'
+mysql> SELECT `users_likes`.`id` AS 'id Взаимного лайка', 
+`users`.`login` AS 'Пользователь'
 FROM `users` INNER JOIN `users_likes`
-GROUP BY  `users`.`id`;
+WHERE `like_2_to_1` = 1
+AND `like_1_to_2` = 1
+AND (`users`.`id` = `id_user1`
+OR `users`.`id` = `id_user2`);
+
++--------------------+--------------+
+| id Взаимного лайка | Пользователь |
++--------------------+--------------+
+|                 11 | Игорь        |
+|                 11 | Юрий         |
+|                 12 | Евгений      |
+|                 12 | Анастасия    |
+|                 13 | Валерий      |
+|                 13 | Марк         |
++--------------------+--------------+
+6 rows in set (0.00 sec)
 
 
 
-SELECT (COUNT(`users_likes`.`who` = `users_likes`.`whom`)) 
-AS 'взаимных лайков' 
-FROM `users_likes` 
-WHERE (`users_likes`.`who` = `users_likes`.`whom`);
-
-SELECT `users`.`id`, `users`.`login` AS 'имя', 
-(SUM(`users`.`who` = `users`.`whom`)) AS 'лайков получено',
-(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков поставлено'
-FROM `users` INNER JOIN `users_likes`
-GROUP BY  `users`.`id`;
-  
 Задача 2. 
 Для структуры из задачи 1 выведите список всех пользователей, 
 которые поставили лайк пользователям A и B (id задайте произвольно), 
 но при этом не поставили лайк пользователю C.
+
+
 
 Задача 3. 
 Добавим сущности «Фотография» и «Комментарии к фотографии». 
