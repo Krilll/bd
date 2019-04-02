@@ -49,15 +49,15 @@ mysql> USE Social_network;
 Database changed
 
 mysql> SELECT `users`.`id`, `users`.`login` AS 'имя', 
-(SUM(`users_likes`.`who` = `users`.`id`)) AS 'лайков получено',
-(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков поставлено'
+(SUM(`users_likes`.`who` = `users`.`id`)) AS 'лайков поставлено',
+(SUM(`users_likes`.`whom` = `users`.`id`)) AS 'лайков получено'
 FROM `users` INNER JOIN `users_likes`
 GROUP BY  `users`.`id`;
 
 Current database: Social_network
 
 +----+-----------+-----------------+-------------------+
-| id | имя       | лайков получено | лайков поставлено |
+| id | имя       | лайков поставено| лайков получено   |
 +----+-----------+-----------------+-------------------+
 |  1 | Анеш      |               3 |                 0 |
 |  2 | Алина     |               1 |                 2 |
