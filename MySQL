@@ -288,7 +288,7 @@ ON DELETE RESTRICT);
 
 #+сущность лайки к фото
 
-CREATE TABLE IF NOT EXISTS `photo_likes` (
+CREATE TABLE IF NOT EXISTS `photos_likes` (
 `id` INT NOT NULL AUTO_INCREMENT,
 `photo_id` INT NOT NULL,
 `user_id` INT NOT NULL,
@@ -306,11 +306,11 @@ ON DELETE RESTRICT);
 
 CREATE TABLE IF NOT EXISTS `photos_comments_likes` (
 `id` INT NOT NULL AUTO_INCREMENT,
-`comments_id` INT NOT NULL,
+`comment_id` INT NOT NULL,
 `user_id` INT NOT NULL,
 PRIMARY KEY (`id`),
-FOREIGN KEY (`comments_id`) 
-REFERENCES `photos_comments`(`id`) 
+FOREIGN KEY (`comment_id`) 
+REFERENCES `photo_comments`(`id`) 
 ON UPDATE CASCADE
 ON DELETE RESTRICT,
 FOREIGN KEY (`user_id`) 
@@ -319,13 +319,52 @@ ON UPDATE CASCADE
 ON DELETE RESTRICT);
 
 #пользователь не может дважды лайкнуть одну и ту же сущность => + триггер
-#photos, phptos_comments, uerss?
+#users?
 
-CREATE TRIGGER `photos`.`one_like`
-BEFORE DELETE ON `trigger_carts` FOR EACH ROW
-BEGIN
-DELETE FROM trigger_cart_items WHERE OLD.cart_id = cart_id;
-END
+DELIMITER //
+CREATE TRIGGER photo_one_like 
+BEFORE INSERT ON `photos_likes` FOR EACH ROW 
+BEGIN 
+IF EXISTS ( SELECT * FROM `photos_likes` 
+WHERE `user_id` = NEW.`user_id` AND `photo_id` = NEW.`photo_id`) 
+THEN 
+SIGNAL SQLSTATE '45000' 
+SET MESSAGE_TEXT = 'Вы уже поставили лайк к данной фотографии' ; 
+END IF; 
+END //
+DELIMITER ;
+
+INSERT INTO `photos` (`owner_id`, `name`) 
+VALUES (1,'Hello'), (2,'World'), (4,'Guest');
+INSERT INTO `photos_likes` (`user_id`, `photo_id`) 
+VALUES (3,1), (7,2), (8,3);
+
+mysql> INSERT INTO `photo_likes` (`user_id`, `photo_id`)
+    -> VALUES (3,1);
+ERROR 1644 (45000): Вы уже поставили лайк к данной фотографии
+
+
+DELIMITER //
+CREATE TRIGGER photo_comment_one_like 
+BEFORE INSERT ON `photos_comments_likes` FOR EACH ROW 
+BEGIN 
+IF EXISTS ( SELECT * FROM `photos_comments_likes` 
+WHERE `user_id` = NEW.`user_id` AND `comment_id` = NEW.`comment_id`) 
+THEN 
+SIGNAL SQLSTATE '45000' 
+SET MESSAGE_TEXT = 'Вы уже поставили лайк к данному комментарию под выбранной фотографией' ; 
+END IF; 
+END //
+DELIMITER ;
+
+INSERT INTO `photos_comments` (`user_id`, `photo_id`, `text`) 
+VALUES (1, 3, 'What a brilliant view!'), (7, 2, 'I like it'), (5, 1, 'This is the worst');
+INSERT INTO `photos_comments_likes` (`user_id`, `comment_id`) 
+VALUES (5,1), (6,2), (9,3);
+
+mysql> INSERT INTO `photos_comments_likes` (`user_id`, `comment_id`)
+    -> VALUES (5,1);
+ERROR 1644 (45000): Вы уже поставили лайк к данному комментарию под выбранной фотографией
 
 
 
@@ -337,7 +376,7 @@ END
   пользователь имеет право отозвать лайк;
   необходимо иметь возможность считать число полученных сущностью лайков 
   и выводить список пользователей, поставивших лайки;
-  +в будущем могут появиться новые виды сущностей, которые можно лайкать.
+  + в будущем могут появиться новые виды сущностей, которые можно лайкать.
 
 
 
