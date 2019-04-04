@@ -20,29 +20,29 @@ INSERT INTO `users` (`login`)
 VALUES ('Анеш'), ('Алина'), ('Игорь'), ('Юрий'), ('Валерий'), 
 ('Евгений'), ('Марк'), ('Анастасия'), ('Андрей'), ('Наталья');
 
-CREATE TABLE IF NOT EXISTS `users_likes` (
+CREATE TABLE IF NOT EXISTS `users_likes` (зр
 `id` INT NOT NULL AUTO_INCREMENT,
-`id_user1` INT NOT NULL,
-`id_user2` INT NOT NULL,
+`user1_id` INT NOT NULL,
+`user2_id` INT NOT NULL,
 `like_1_to_2` INT(1) NOT NULL DEFAULT '1', 
 `like_2_to_1` INT(1) NOT NULL DEFAULT '0',
 PRIMARY KEY (`id`));
 
 ALTER TABLE `users_likes`
-ADD FOREIGN KEY (`id_user1`) 
+ADD FOREIGN KEY (`user1_id`) 
 REFERENCES `users`(`id`) 
 ON UPDATE CASCADE
 ON DELETE RESTRICT,
-ADD FOREIGN KEY (`id_user2`) 
+ADD FOREIGN KEY (`user2_id`) 
 REFERENCES `users`(`id`) 
 ON UPDATE CASCADE
 ON DELETE RESTRICT;
 
-INSERT INTO `users_likes` (`id_user1`, `id_user2`) 
+INSERT INTO `users_likes` (`user1_id`, `user2_id`) 
 VALUES (1,2), (2,3), (4,8), (7,10), 
 (9,10), (10,8), (1,5), (3,2), (1,4);
 
-INSERT INTO `users_likes` (`id_user1`, `id_user2`, `like_2_to_1`) 
+INSERT INTO `users_likes` (`user1_id`, `user2_id`, `like_2_to_1`) 
 VALUES (3,4,1), (8,6,1), (7,2,1);
 
 #запросы
@@ -55,20 +55,20 @@ Database changed
 
 mysql> SELECT `users`.`id`, `users`.`login` AS 'имя', 
 SUM( 
-  (`users_likes`.`id_user1` = `users`.`id` 
+  (`users_likes`.`user1_id` = `users`.`id` 
     AND 
     `users_likes`.`like_1_to_2` = 1) 
   OR 
-  (`users_likes`.`id_user2` = `users`.`id` 
+  (`users_likes`.`user2_id` = `users`.`id` 
     AND 
     `users_likes`.`like_2_to_1` = 1) 
 ) AS 'лайков поставлено',
 SUM( 
-  (`users_likes`.`id_user2` = `users`.`id` 
+  (`users_likes`.`user2_id` = `users`.`id` 
     AND 
     `users_likes`.`like_1_to_2` = 1) 
   OR 
-  (`users_likes`.`id_user1` = `users`.`id` 
+  (`users_likes`.`user1_id` = `users`.`id` 
     AND 
     `users_likes`.`like_2_to_1` = 1) 
 ) AS 'лайков получено' 
@@ -97,16 +97,16 @@ GROUP BY `users`.`id`;
 
 mysql> SELECT `users`.`id`, `users`.`login` AS 'имя', 
 SUM( 
-  (`users_likes`.`id_user1` = `users`.`id`) 
+  (`users_likes`.`user1_id` = `users`.`id`) 
   OR
-  (`users_likes`.`id_user2` = `users`.`id`
+  (`users_likes`.`user2_id` = `users`.`id`
   AND 
   `like_2_to_1` = 1)
 ) AS 'лайков поставлено',
 SUM( 
-  (`users_likes`.`id_user2` = `users`.`id`) 
+  (`users_likes`.`user2_id` = `users`.`id`) 
   OR
-  (`users_likes`.`id_user1` = `users`.`id`
+  (`users_likes`.`user1_id` = `users`.`id`
   AND 
   `like_2_to_1` = 1)
 ) AS 'лайков получено'
@@ -132,13 +132,13 @@ GROUP BY `users`.`id`;
 
 #Взаимные лайки.
 
-mysql> SELECT `users_likes`.`id`, `id_user1`, `id_user2`
+mysql> SELECT `users_likes`.`id`, `user1_id`, `user2_id`
 FROM `users_likes`
 WHERE `like_2_to_1` = 1
 AND `like_1_to_2` = 1;
 
 +----+----------+----------+
-| id | id_user1 | id_user2 |
+| id | user1_id | user2_id |
 +----+----------+----------+
 | 11 |        3 |        4 |
 | 12 |        8 |        6 |
@@ -151,8 +151,8 @@ mysql> SELECT `users_likes`.`id` AS 'id Взаимного лайка',
 FROM `users` INNER JOIN `users_likes`
 WHERE `like_2_to_1` = 1
 AND `like_1_to_2` = 1
-AND (`users`.`id` = `id_user1`
-OR `users`.`id` = `id_user2`);
+AND (`users`.`id` = `user1_id`
+OR `users`.`id` = `user2_id`);
 
 +--------------------+--------------+
 | id Взаимного лайка | Пользователь |
@@ -255,3 +255,93 @@ WHERE(
   необходимо иметь возможность считать число полученных сущностью лайков 
   и выводить список пользователей, поставивших лайки;
   в будущем могут появиться новые виды сущностей, которые можно лайкать.
+
+# + сущность "Фотография"
+
+CREATE TABLE IF NOT EXISTS `photos` (
+`id` INT NOT NULL  AUTO_INCREMENT,
+`name` VARCHAR(25) NOT NULL,
+`owner_id` INT NOT NULL,
+PRIMARY KEY (`id`),
+FOREIGN KEY (`owner_id`) 
+REFERENCES `users`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT);
+
+
+# + сущность "Комментарии к фотографии"
+
+CREATE TABLE IF NOT EXISTS `photos_comments` (
+`id` INT NOT NULL  AUTO_INCREMENT,
+`photo_id` INT NOT NULL,
+`user_id` INT NOT NULL,
+`text` VARCHAR(25) NOT NULL,
+PRIMARY KEY (`id`),
+FOREIGN KEY (`photo_id`) 
+REFERENCES `photos`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT,
+FOREIGN KEY (`user_id`) 
+REFERENCES `users`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT);
+
+#+сущность лайки к фото
+
+CREATE TABLE IF NOT EXISTS `photo_likes` (
+`id` INT NOT NULL AUTO_INCREMENT,
+`photo_id` INT NOT NULL,
+`user_id` INT NOT NULL,
+PRIMARY KEY (`id`),
+FOREIGN KEY (`photo_id`) 
+REFERENCES `photos`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT,
+FOREIGN KEY (`user_id`) 
+REFERENCES `users`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT);
+
+#+сущность лайки к комментариям к фото
+
+CREATE TABLE IF NOT EXISTS `photos_comments_likes` (
+`id` INT NOT NULL AUTO_INCREMENT,
+`comments_id` INT NOT NULL,
+`user_id` INT NOT NULL,
+PRIMARY KEY (`id`),
+FOREIGN KEY (`comments_id`) 
+REFERENCES `photos_comments`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT,
+FOREIGN KEY (`user_id`) 
+REFERENCES `users`(`id`) 
+ON UPDATE CASCADE
+ON DELETE RESTRICT);
+
+#пользователь не может дважды лайкнуть одну и ту же сущность => + триггер
+#photos, phptos_comments, uerss?
+
+CREATE TRIGGER `photos`.`one_like`
+BEFORE DELETE ON `trigger_carts` FOR EACH ROW
+BEGIN
+DELETE FROM trigger_cart_items WHERE OLD.cart_id = cart_id;
+END
+
+
+
++Добавим сущности «Фотография» и «Комментарии к фотографии». 
++Нужно создать функционал для пользователей, который позволяет ставить 
++лайки не только пользователям, но и фото или комментариям к фото. 
+Учитывайте следующие ограничения:
+  - пользователь не может дважды лайкнуть одну и ту же сущность;
+  пользователь имеет право отозвать лайк;
+  необходимо иметь возможность считать число полученных сущностью лайков 
+  и выводить список пользователей, поставивших лайки;
+  +в будущем могут появиться новые виды сущностей, которые можно лайкать.
+
+
+
+
+
+
+
