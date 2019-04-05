@@ -263,13 +263,34 @@ OR `users`.`id` = `user2_id`);
 #B = 6, => 1, 4 
 #C = 9 => 1,2,3, -----
 
-SELECT `users`.`login` AS 'имя', `users`.`id`
+
+SELECT `users`.`login` AS 'имя', `users`.`id`,
+IF ( SUM(`users`.`id` = `users_profiles_likes`.`user_id`)
+= 2, 1, NULL) AS 'count'
 FROM `users` INNER JOIN `users_profiles_likes` 
 WHERE 
 `users`.`id` = `users_profiles_likes`.`user_id`
 AND 
-`users_profiles_likes`.`profile_id` = 2 AND
-SUM(`users_profiles_likes`.`profile_id` = 6) = 1
+(`users_profiles_likes`.`profile_id` = 2 OR 
+`users_profiles_likes`.`profile_id` = 6)
+AND 'count' IS NOT NULL
+GROUP BY `users_profiles_likes`.`user_id`
+;
+
+#SUM(IF( (`users`.`id` = `users_profiles_likes`.`user_id`) = 2, 1, 0) AS 'count'
+
+
+
+
+SELECT `users`.`login` AS 'имя', `users`.`id`,
+SUM(`users`.`id` = = `users_profiles_likes`.`user_id`) AS 'count',
+CASE WHEN 
+WHERE 
+`users`.`id` = `users_profiles_likes`.`user_id`
+AND 
+(`users_profiles_likes`.`profile_id` = 2 OR 
+`users_profiles_likes`.`profile_id` = 6)
+WHEN COUNT(`users`.`id`) = 2
 ;
 
 AND (
@@ -280,6 +301,33 @@ WHERE
 AND `users_profiles_likes`.`profile_id` = 6);
 
 
+
+
+
+DELIMITER //
+CREATE PROCEDURE like_A_B_not_C ( A INT(11), B INT(11), C INT(11))
+BEGIN 
+
+IF EXISTS (SELECT `users`.`login` AS 'имя'
+FROM `users` INNER JOIN `users_profiles_likes` 
+WHERE 
+`users`.`id` = `users_profiles_likes`.`user_id`
+AND `users_profiles_likes`.`profile_id` = A) 
+THEN 
+IF EXISTS (SELECT `users`.`login` AS 'имя'
+FROM `users` INNER JOIN `users_profiles_likes` 
+WHERE 
+`users`.`id` = `users_profiles_likes`.`user_id`
+AND `users_profiles_likes`.`profile_id` = B) 
+TNEN
+SELECT `users`.`login` AS 'имя'
+FROM `users` INNER JOIN `users_profiles_likes` ;
+
+END IF; 
+END IF; 
+
+END //
+DELIMITER ;
 
 
 #id пользователя A = 2, id пользователя B = 5, id пользователя C = 4, 
@@ -502,7 +550,7 @@ DELIMITER //
 CREATE PROCEDURE user_profile_delete_like ( user INT(11), profile INT(11))
 BEGIN 
 UPDATE `users_profiles_likes`
-SET .`recalled` = 1
+SET `recalled` = 1
 WHERE 
 `user_id` = user AND `profile_id` = profile;
 END //
