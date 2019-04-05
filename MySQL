@@ -256,6 +256,29 @@ OR `users`.`id` = `user2_id`);
 которые поставили лайк пользователям A и B (id задайте произвольно), 
 но при этом не поставили лайк пользователю C.
 
+#id профиля A = 2, id профиля B = 6, id профиля C = 8, 
+
+
+#id профиля A = 2, => 1, 5, 4
+#B = 6, => 1, 4 
+#C = 9 => 1,2,3, -----
+
+SELECT `users`.`login` AS 'имя', `users`.`id`
+FROM `users` INNER JOIN `users_profiles_likes` 
+WHERE 
+`users`.`id` = `users_profiles_likes`.`user_id`
+AND 
+`users_profiles_likes`.`profile_id` = 2 AND
+SUM(`users_profiles_likes`.`profile_id` = 6) = 1
+;
+
+AND (
+SELECT `users`.`login` AS 'имя'
+FROM `users` INNER JOIN `users_profiles_likes` 
+WHERE 
+`users`.`id` = `users_profiles_likes`.`user_id`
+AND `users_profiles_likes`.`profile_id` = 6);
+
 
 
 
@@ -331,7 +354,7 @@ WHERE(
 ==
 
 
-
+==============okkkkkkkkk
 Задача 3. 
 Добавим сущности «Фотография» и «Комментарии к фотографии». 
 Нужно создать функционал для пользователей, который позволяет ставить 
@@ -453,6 +476,7 @@ mysql> INSERT INTO `photos_comments_likes` (`user_id`, `comment_id`)
     -> VALUES (5,1);
 ERROR 1644 (45000): Вы уже поставили лайк к данному комментарию под выбранной фотографией
 
+
 DELIMITER //
 CREATE TRIGGER user_profile_one_like 
 BEFORE INSERT ON `users_profiles_likes` FOR EACH ROW 
@@ -484,8 +508,6 @@ WHERE
 END //
 DELIMITER ;
 
-INSERT INTO `users_profiles_likes` (`user_id`, `profile_id`) VALUES (3,8);
-
 mysql> CALL user_profile_delete_like (3, 8);
 Query OK, 1 row affected (1.19 sec)
 
@@ -509,8 +531,6 @@ WHERE
 END //
 DELIMITER ;
 
-INSERT INTO `photos_likes` (`user_id`, `photo_id`) VALUES (9, 2);
-
 mysql> CALL user_photo_delete_like (9, 2);
 Query OK, 1 row affected (1.10 sec)
 
@@ -532,8 +552,6 @@ WHERE
 `user_id` = user AND `comment_id` = comment;
 END //
 DELIMITER ;
-
-INSERT INTO `photos_comments_likes` (`user_id`, `comment_id`) VALUES (10,3);
 
 mysql> CALL user_comment_delete_like (10, 3);
 Query OK, 1 row affected (1.13 sec)
@@ -571,7 +589,6 @@ mysql> CALL user_profile_likes (8);
 | Алина           | Donec lobortis, mauris eget fringilla iaculis, lectus quam porta velit, ut luctus tellus. |      NULL |
 +-----------------+-------------------------------------------------------------------------------------------+-----------+
 2 rows in set (0.00 sec)
-
 Query OK, 0 rows affected (0.12 sec)
 
 
@@ -579,39 +596,147 @@ DELIMITER //
 CREATE PROCEDURE user_photo_likes (photo INT(11))
 BEGIN 
 SELECT `users`.`login` AS 'Поставили лайки',
-`users_profiles`.`content` AS 'Профилю',
-`users_profiles_likes`.`recalled` AS 'Отозвано?'
-FROM `users_profiles_likes` INNER JOIN `users_profiles` INNER JOIN `users`
+`photos`.`name` AS 'Фотографии',
+`photos_likes`.`recalled` AS 'Отозвано?'
+FROM `photos_likes` INNER JOIN `photos` INNER JOIN `users`
 WHERE
-`users_profiles_likes`.`profile_id` = profile AND
-`users_profiles_likes`.`user_id` = `users`.`id` AND
-`users_profiles`.`id` = profile;
+`photos_likes`.`photo_id` = photo AND
+`photos_likes`.`user_id` = `users`.`id` AND
+`photos`.`id` = photo;
 END //
 DELIMITER ;
 
-mysql> CALL user_profile_likes (8);
+mysql> CALL user_photo_likes (2);
++-----------------+------------+-----------+
+| Поставили лайки | Фотографии | Отозвано? |
++-----------------+------------+-----------+
+| Марк            | World      |      NULL |
+| Андрей          | World      |         1 |
++-----------------+------------+-----------+
+2 rows in set (1.06 sec)
+Query OK, 0 rows affected (1.07 sec)
 
 
 DELIMITER //
-CREATE PROCEDURE user_profile_likes (profile INT(11))
+CREATE PROCEDURE photo_comment_likes (comment INT(11))
 BEGIN 
 SELECT `users`.`login` AS 'Поставили лайки',
-`users_profiles`.`content` AS 'Профилю',
-`users_profiles_likes`.`recalled` AS 'Отозвано?'
-FROM `users_profiles_likes` INNER JOIN `users_profiles` INNER JOIN `users`
+`photos_comments`.`text` AS 'Комментарию',
+`photos_comments_likes`.`recalled` AS 'Отозвано?' 
+FROM `photos_comments_likes` INNER JOIN `photos_comments` INNER JOIN `users`
 WHERE
-`users_profiles_likes`.`profile_id` = profile AND
-`users_profiles_likes`.`user_id` = `users`.`id` AND
-`users_profiles`.`id` = profile;
+`photos_comments_likes`.`comment_id` = comment AND
+`photos_comments_likes`.`user_id` = `users`.`id` AND
+`photos_comments`.`id` = comment;
 END //
 DELIMITER ;
 
-mysql> CALL user_profile_likes (8);
+mysql> CALL photo_comment_likes (3);
++-----------------+-------------------+-----------+
+| Поставили лайки | Комментарию       | Отозвано? |
++-----------------+-------------------+-----------+
+| Андрей          | This is the worst |      NULL |
+| Наталья         | This is the worst |         1 |
++-----------------+-------------------+-----------+
+2 rows in set (1.05 sec)
+Query OK, 0 rows affected (1.06 sec)
+
+
 #считать число полученных сущностью лайков 
 
+DELIMITER //
+CREATE PROCEDURE user_profile_quantity_likes (profile INT(11))
+BEGIN 
+SELECT `users_profiles`.`content` AS 'Профилю', 
+SUM( 
+  (`users_profiles_likes`.`recalled` IS NULL) 
+  AND 
+  (`users_profiles_likes`.`profile_id` = profile)
+) AS 'Поставили лайки',  
+SUM( 
+  (`users_profiles_likes`.`recalled` IS NOT NULL) 
+  AND 
+  (`users_profiles_likes`.`profile_id` = profile)
+) AS 'Отозвано'
+FROM `users_profiles_likes` INNER JOIN `users_profiles` 
+INNER JOIN `users` 
+WHERE `users_profiles_likes`.`profile_id` = profile 
+AND `users_profiles_likes`.`user_id` = `users`.`id` 
+AND `users_profiles`.`id` = profile 
+GROUP BY `users_profiles_likes`.`profile_id`; 
+END //
+DELIMITER ;
+
+mysql> CALL user_profile_quantity_likes (8);
++-------------------------------------------------------------------------------------------+-----------------+----------+
+| Профилю                                                                                   | Поставили лайки | Отозвано |
++-------------------------------------------------------------------------------------------+-----------------+----------+
+| Donec lobortis, mauris eget fringilla iaculis, lectus quam porta velit, ut luctus tellus. |               1 |        1 |
++-------------------------------------------------------------------------------------------+-----------------+----------+
+1 row in set (1.10 sec)
+Query OK, 0 rows affected (1.12 sec)
 
 
+DELIMITER //
+CREATE PROCEDURE user_photo_quantity_likes (photo INT(11))
+BEGIN 
+SELECT `photos`.`name` AS 'Фотографии',
+SUM( 
+  (`photos_likes`.`recalled` IS NULL) 
+  AND 
+  (`photos_likes`.`photo_id` = photo)
+) AS 'Поставили лайки',  
+SUM( 
+  (`photos_likes`.`recalled` IS NOT NULL) 
+  AND 
+  (`photos_likes`.`photo_id` = photo)
+) AS 'Отозвано'
+FROM `photos_likes` INNER JOIN `photos` INNER JOIN `users`
+WHERE `photos_likes`.`photo_id` = photo AND
+`photos_likes`.`user_id` = `users`.`id` AND
+`photos`.`id` = photo
+GROUP BY `photos_likes`.`photo_id`; 
+END //
+DELIMITER ;
+
+mysql> CALL user_photo_quantity_likes (2);
++------------+-----------------+----------+
+| Фотографии | Поставили лайки | Отозвано |
++------------+-----------------+----------+
+| World      |               1 |        1 |
++------------+-----------------+----------+
+1 row in set (1.10 sec)
+Query OK, 0 rows affected (1.13 sec)
 
 
+DELIMITER //
+CREATE PROCEDURE user_photo_comment_quantity_likes (comment INT(11))
+BEGIN 
+SELECT `photos_comments`.`text` AS 'Комментарию',
+SUM( 
+  (`photos_comments_likes`.`recalled` IS NULL) 
+  AND 
+  (`photos_comments_likes`.`comment_id` = comment)
+) AS 'Поставили лайки',  
+SUM( 
+  (`photos_comments_likes`.`recalled` IS NOT NULL) 
+  AND 
+  (`photos_comments_likes`.`comment_id` = comment)
+) AS 'Отозвано'
+FROM `photos_comments_likes` INNER JOIN `photos_comments` INNER JOIN `users`
+WHERE
+`photos_comments_likes`.`comment_id` = comment AND
+`photos_comments_likes`.`user_id` = `users`.`id` AND
+`photos_comments`.`id` = comment
+GROUP BY `photos_comments_likes`.`comment_id`; 
+END //
+DELIMITER ;
 
-
+mysql> CALL user_photo_comment_quantity_likes (3);
++-------------------+-----------------+----------+
+| Комментарию       | Поставили лайки | Отозвано |
++-------------------+-----------------+----------+
+| This is the worst |               1 |        1 |
++-------------------+-----------------+----------+
+1 row in set (1.07 sec)
+Query OK, 0 rows affected (1.07 sec)
